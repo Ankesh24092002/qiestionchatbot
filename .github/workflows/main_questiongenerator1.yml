@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - QuestionGenerator1
+name: Build and deploy Python app to Azure Web App - questiongenerator1
 
 on:
   push:
@@ -65,14 +65,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5C6EB2849D18468D875668D7A50FA5E6 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3197E275AD8B4F48982A46856BFB07A8 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_99466107165C46DAB81E6E669278E4E8 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_52F9B1B9C5FE4A6EABC8001AEE10EFBB }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A40C889BE7F44B7DBB7D978127364042 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6031E9EE878A4994892C78937DB1FA5D }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
         with:
-          app-name: 'QuestionGenerator1'
+          app-name: 'questiongenerator1'
           slot-name: 'Production'
           
