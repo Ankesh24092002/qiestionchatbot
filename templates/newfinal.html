@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Question Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #000000;
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 8cm;
+            padding: 20px;
+            background-color: #000000;
+            border-right: 1px solid #333;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            background-color: #000000;
+            color: white;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #000000;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: white;
+        }
+        .file-upload-container {
+            border: 2px dashed #333;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        .file-upload-container.dragover {
+            border-color: white;
+        }
+        .file-upload-container input[type="file"] {
+            display: none;
+        }
+        .file-upload-container p {
+            margin: 0;
+        }
+        .file-upload-container .browse-button {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .file-upload-container .browse-button:hover {
+            background-color: #555;
+        }
+        .file-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: white;
+        }
+        form select, form input[type="text"], form input[type="submit"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+        }
+        form select {
+            margin-bottom: 30px;
+        }
+        form input[type="submit"] {
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            height: 1cm;
+            width: 7cm;
+        }
+        form input[type="submit"]:hover {
+            background-color: #555;
+        }
+        #responseContainer {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 4px;
+            flex-grow: 1;
+            background-color: #000000;
+            color: white;
+        }
+        #loadingMessage {
+            display: none;
+            color: white;
+            font-weight: bold;
+        }
+        #sidebarResponseContainer {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: white;
+            font-weight: bold;
+        }
+        #generatingQuestionsMessage {
+            color: white;
+            display: none;
+        }
+        .delete-button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="section">
+            <h2>Upload File</h2>
+            <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+                <label for="prompt_template">Select Prompt Template</label>
+                <select id="prompt_template" name="prompt_template">
+                    <option value="Questions">Questions</option>
+                    <option value="MCQS">MCQS</option>
+                    <option value="True/False">True/False</option>
+                    <option value="Hints">Hints</option>
+                </select>
+                <div class="file-upload-container" id="fileUploadContainer">
+                    <p>Drag and drop file here</p>
+                    <p>(Limit 200MB per file • PDF, DOCX, TXT, MD, HTML, PPTX, HTM)</p>
+                    <input type="file" id="upload_file" name="upload_file">
+                    <button type="button" class="browse-button" onclick="document.getElementById('upload_file').click();">Browse files</button>
+                </div>
+                <p class="file-info" id="fileInfo">No file selected</p>
+                <input type="submit" value="Upload">
+                <p id="loadingMessage">Please wait, your file is processing...</p>
+                <div id="sidebarResponseContainer"></div>
+                <button type="button" class="delete-button" onclick="deleteCollection()">Delete Collection</button>
+                <p id="deleteMessage" style="display: none;">Collection deleted successfully</p>
+            </form>
+        </div>
+    </div>
+    <div class="main-content">
+        <h1>Question Generator</h1>
+        <div class="section">
+            <h2>Chat Section</h2>
+            <form id="chatForm" action="/chat" method="post">
+                <label for="user_message">Ask a question</label>
+                <input type="text" id="user_message" name="user_message" placeholder="generate 10 questions">
+                <input type="submit" value="Submit" onclick="showGeneratingQuestionsMessage()">
+            </form>
+            <p id="generatingQuestionsMessage">Please wait, we are generating questions...</p>
+            <div id="responseContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function showGeneratingQuestionsMessage() {
+            const generatingQuestionsMessage = document.getElementById('generatingQuestionsMessage');
+            generatingQuestionsMessage.style.display = 'block'; // Show generating questions message
+        }
+
+        async function deleteCollection() {
+            try {
+                const response = await fetch('/deleteCollection', {
+                    method: 'POST',
+                });
+                const result = await response.text();
+                const deleteMessage = document.getElementById('deleteMessage');
+                deleteMessage.textContent = result;
+                deleteMessage.style.display = 'block'; // Display the delete message
+            } catch (error) {
+                console.error('Error deleting collection:', error);
+                alert('There was an error deleting the collection. Please try again.');
+            }
+        }
+
+        document.getElementById('uploadForm').onsubmit = async function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const loadingMessage = document.getElementById('loadingMessage');
+            loadingMessage.style.display = 'block'; // Show loading message
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const result = await response.text();
+                const sidebarResponseContainer = document.getElementById('sidebarResponseContainer');
+                sidebarResponseContainer.textContent = result; // Display the result in the sidebar
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('There was an error uploading your file. Please try again.');
+            } finally {
+                loadingMessage.style.display = 'none'; // Hide loading message
+            }
+        };
+
+        document.getElementById('chatForm').onsubmit = async function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const generatingQuestionsMessage = document.getElementById('generatingQuestionsMessage');
+            generatingQuestionsMessage.style.display = 'block'; // Show generating questions message
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const result = await response.json();
+                const responseContainer = document.getElementById('responseContainer');
+                responseContainer.innerHTML = ''; // Clear previous responses
+                const responseLines = result.response.split('\n');
+                responseLines.forEach(line => {
+                    const p = document.createElement('p');
+                    p.classList.add('response-line');
+                    p.textContent = line;
+                    responseContainer.appendChild(p);
+                });
+            } catch (error) {
+                console.error('Error generating questions:', error);
+                alert('There was an error generating questions. Please try again.');
+            } finally {
+                generatingQuestionsMessage.style.display = 'none'; // Hide generating questions message
+            }
+        };
+
+        const fileUploadContainer = document.getElementById('fileUploadContainer');
+        const fileInput = document.getElementById('upload_file');
+        const fileInfo = document.getElementById('fileInfo');
+
+        fileUploadContainer.addEventListener('dragover', function(event) {
+            event.preventDefault();
+            fileUploadContainer.classList.add('dragover');
+        });
+
+        fileUploadContainer.addEventListener('dragleave', function() {
+            fileUploadContainer.classList.remove('dragover');
+        });
+
+        fileUploadContainer.addEventListener('drop', function(event) {
+            event.preventDefault();
+            fileUploadContainer.classList.remove('dragover');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInfo.textContent = `File selected: ${files[0].name}`;
+            }
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                fileInfo.textContent = `File selected: ${fileInput.files[0].name}`;
+            } else {
+                fileInfo.textContent = 'No file selected';
+            }
+        });
+    </script>
+</body>
+</html>
