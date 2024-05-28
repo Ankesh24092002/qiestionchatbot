@@ -198,7 +198,7 @@ def perform_query_chat(message_history):
 
 @app.route('/')
 def index():
-    return render_template('chatgpt.html', uploaded_files=session.get('uploaded_files', []))
+    return render_template('newfinal.html', uploaded_files=session.get('uploaded_files', []))
 
 message_history = []
 
