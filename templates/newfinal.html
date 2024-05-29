@@ -7,63 +7,61 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            background-color: #000000;
+            background-color: #121212;
             display: flex;
             height: 100vh;
+            color: #ffffff;
         }
         .sidebar {
-            width: 8cm;
+            width: 20%;
             padding: 20px;
-            background-color: #000000;
+            background-color: #1e1e1e;
             border-right: 1px solid #333;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            color: white;
+            justify-content: space-between;
         }
         .main-content {
             flex-grow: 1;
             padding: 20px;
             display: flex;
             flex-direction: column;
-            background-color: #000000;
-            color: white;
+            background-color: #1e1e1e;
+            overflow: hidden; /* Ensure it doesn't overflow the main container */
         }
         h1 {
-            color: white;
             text-align: center;
         }
         .section {
+            flex-grow: 1; /* Allow this section to grow and fill available space */
             margin-bottom: 20px;
             padding: 20px;
             border: 1px solid #333;
             border-radius: 8px;
-            background-color: #000000;
-            flex-grow: 1;
+            background-color: #2b2b2b;
             display: flex;
             flex-direction: column;
-            color: white;
+            overflow: hidden; /* Ensure it doesn't overflow the main container */
         }
         .section h2 {
             margin-top: 0;
-            color: white;
         }
         .file-upload-container {
-            border: 2px dashed #333;
+            border: 2px dashed #444;
             padding: 20px;
             text-align: center;
             cursor: pointer;
             border-radius: 8px;
             position: relative;
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: white;
+            transition: border-color 0.3s ease;
         }
         .file-upload-container.dragover {
-            border-color: white;
+            border-color: #ffffff;
         }
         .file-upload-container input[type="file"] {
             display: none;
@@ -80,6 +78,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
         .file-upload-container .browse-button:hover {
             background-color: #555;
@@ -93,9 +92,8 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            color: white;
         }
-        form select, form input[type="text"], form input[type="submit"] {
+        form input[type="text"], form input[type="submit"] {
             width: 100%;
             box-sizing: border-box;
             padding: 10px;
@@ -105,84 +103,102 @@
             background-color: #333;
             color: white;
         }
-        form select {
-            margin-bottom: 30px;
-        }
         form input[type="submit"] {
-            background-color: #333;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            height: 1cm;
-            width: 7cm;
-        }
+           width: 6cm;
+           height: 1cm;
+           box-sizing: border-box;
+           padding: 10px;
+           margin-bottom: 20px;
+           border: 1px solid #333;
+           border-radius: 4px;
+           background-color: #444;
+           color: white;
+           cursor: pointer;
+           transition: background-color 0.3s ease;
+           }
         form input[type="submit"]:hover {
-            background-color: #555;
-        }
+           background-color: #666;
+          }
+
         #responseContainer {
-            max-height: 300px;
-            overflow-y: auto;
+            flex-grow: 1; /* Allow this container to grow within the section */
+            overflow-y: auto; /* Enable scrolling for the responses */
             border: 1px solid #333;
             padding: 10px;
             border-radius: 4px;
-            flex-grow: 1;
-            background-color: #000000;
-            color: white;
+            background-color: #2b2b2b;
         }
-        #loadingMessage {
+        #loadingMessage, #deleteLoadingMessage {
             display: none;
-            color: white;
             font-weight: bold;
         }
         #sidebarResponseContainer {
             margin-top: 10px;
             font-size: 0.9em;
-            color: white;
             font-weight: bold;
         }
         #generatingQuestionsMessage {
-            color: white;
             display: none;
         }
         .delete-button {
-            background-color: #333;
+            background-color: #444;
             color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
         .delete-button:hover {
-            background-color: #555;
+            background-color: #666;
+        }
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .footer-section {
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #2b2b2b;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="section">
-            <h2>Upload File</h2>
-            <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
-                <label for="prompt_template">Select Prompt Template</label>
-                <select id="prompt_template" name="prompt_template">
-                    <option value="Questions">Questions</option>
-                    <option value="MCQS">MCQS</option>
-                    <option value="True/False">True/False</option>
-                    <option value="Hints">Hints</option>
-                </select>
-                <div class="file-upload-container" id="fileUploadContainer">
-                    <p>Drag and drop file here</p>
-                    <p>(Limit 200MB per file • PDF, DOCX, TXT, MD, HTML, PPTX, HTM)</p>
-                    <input type="file" id="upload_file" name="upload_file">
-                    <button type="button" class="browse-button" onclick="document.getElementById('upload_file').click();">Browse files</button>
-                </div>
-                <p class="file-info" id="fileInfo">No file selected</p>
-                <input type="submit" value="Upload">
-                <p id="loadingMessage">Please wait, your file is processing...</p>
-                <div id="sidebarResponseContainer"></div>
-                <button type="button" class="delete-button" onclick="deleteCollection()">Delete Collection</button>
-                <p id="deleteMessage" style="display: none;">Collection deleted successfully</p>
-            </form>
+        <div>
+            <div class="section">
+                <h2>Upload File</h2>
+                <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+                    <div class="file-upload-container" id="fileUploadContainer">
+                        <p>Drag and drop file here</p>
+                        <p>(Limit 200MB per file • PDF, DOCX, TXT, MD, HTML, PPTX, HTM)</p>
+                        <input type="file" id="upload_file" name="upload_file">
+                        <button type="button" class="browse-button" onclick="document.getElementById('upload_file').click();">Browse files</button>
+                    </div>
+                    <p class="file-info" id="fileInfo">No file selected</p>
+                    <input type="submit" value="Upload">
+                    <p id="loadingMessage">Please wait, your file is processing...<span class="spinner" id="uploadSpinner"></span></p>
+                    <div id="sidebarResponseContainer"></div>
+                </form>
+            </div>
+        </div>
+        <div class="footer-section">
+            <p>After using the application, please delete your collection to free up space.</p>
+            <button type="button" class="delete-button" onclick="deleteCollection()">Delete Collection</button>
+            <p id="deleteMessage" style="display: none;">Please Wait we are deleting collection!<span class="spinner" id="deleteSpinner"></span></p>
         </div>
     </div>
     <div class="main-content">
@@ -194,7 +210,7 @@
                 <input type="text" id="user_message" name="user_message" placeholder="generate 10 questions">
                 <input type="submit" value="Submit" onclick="showGeneratingQuestionsMessage()">
             </form>
-            <p id="generatingQuestionsMessage">Please wait, we are generating questions...</p>
+            <p id="generatingQuestionsMessage">Please wait, we are generating questions...<span class="spinner"></span></p>
             <div id="responseContainer"></div>
         </div>
     </div>
@@ -207,16 +223,27 @@
 
         async function deleteCollection() {
             try {
-                const response = await fetch('/deleteCollection', {
+                const deleteMessage = document.getElementById('deleteMessage');
+                const deleteSpinner = document.getElementById('deleteSpinner');
+                deleteMessage.style.display = 'block'; // Show delete message
+                deleteSpinner.style.display = 'inline-block'; // Show spinner
+
+                const response = await fetch('/delete', {
                     method: 'POST',
                 });
-                const result = await response.text();
-                const deleteMessage = document.getElementById('deleteMessage');
-                deleteMessage.textContent = result;
-                deleteMessage.style.display = 'block'; // Display the delete message
+                const result = await response.json();
+                deleteMessage.textContent = result.response;
+
+                // Wait for 2 seconds before refreshing the page
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
             } catch (error) {
                 console.error('Error deleting collection:', error);
                 alert('There was an error deleting the collection. Please try again.');
+            } finally {
+                const deleteSpinner = document.getElementById('deleteSpinner');
+                deleteSpinner.style.display = 'none'; // Hide spinner
             }
         }
 
@@ -225,7 +252,9 @@
             const form = event.target;
             const formData = new FormData(form);
             const loadingMessage = document.getElementById('loadingMessage');
+            const uploadSpinner = document.getElementById('uploadSpinner');
             loadingMessage.style.display = 'block'; // Show loading message
+            uploadSpinner.style.display = 'inline-block'; // Show spinner
 
             try {
                 const response = await fetch('/upload', {
@@ -240,6 +269,7 @@
                 alert('There was an error uploading your file. Please try again.');
             } finally {
                 loadingMessage.style.display = 'none'; // Hide loading message
+                uploadSpinner.style.display = 'none'; // Hide spinner
             }
         };
 
