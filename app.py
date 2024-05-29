@@ -57,7 +57,7 @@ ASTR_DB_ID = os.getenv('ASTR_DB_ID')
 ASTRA_DB_API_ENDPOINT = os.getenv('ASTRA_DB_API_ENDPOINT')
 AZURE_OPENAI_KEY = os.getenv('AZURE_OPENAI_KEY')
 AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
-app.secret_key = secrets.token_hex()
+app.secret_key = os.getenv('SECRET_KEY', 'supersecretkey')
 
 def generate_random_string(length=10):
     characters = string.ascii_lowercase + string.digits + '_'
@@ -75,10 +75,10 @@ def initialize_astra_vector_store(table_name):
     )
     return astra_vector_store
 
-def deleteCollection_newUpload(table_name):
+def delete_collection(table_name):
     db = AstraDB(
-        token=os.getenv('ASTRA_DB_APPLICATION_TOKEN'),
-        api_endpoint=os.getenv('ASTRA_DB_API_ENDPOINT'),
+        token=ASTRA_DB_APPLICATION_TOKEN,
+        api_endpoint=ASTRA_DB_API_ENDPOINT,
     )
     db.delete_collection(collection_name=table_name)
 
@@ -207,21 +207,15 @@ def upload():
     if 'upload_file' in request.files:
         file = request.files['upload_file']
         if file.filename != '':
-            prompt_template = request.form.get('prompt_template')
-            if not prompt_template:
-                return "Please select a prompt template!"
-            session['prompt_template'] = prompt_template
-
             if session.get('table_name'):
                 table_name = session.get('table_name')
-                deleteCollection_newUpload(table_name)
+                delete_collection(table_name)
                 session['table_name'] = None
 
             table_name = generate_random_string()
             session['table_name'] = table_name
             session['uploaded_files'] = [file.filename]
-            session['texts'] = preprocessor_files(file)
-            texts = session.get('texts')
+            texts = preprocessor_files(file)
             astra_vector_store = initialize_astra_vector_store(table_name)
             current_app.config["AstraVectorStore"] = astra_vector_store
             astra_vector_store.add_texts(texts)
@@ -236,29 +230,22 @@ def upload():
 @app.route('/chat', methods=['POST'])
 def chatbot():
     user_message = request.form.get('user_message')
-    prompt_template = session.get('prompt_template')
-
-    if not prompt_template:
-        return jsonify({"response": "Please select a prompt template!"})
 
     if user_message:
         if session.get('uploaded_files') and current_app.config["AstraVectorStore"] is not None:
             astra_vector_store = current_app.config["AstraVectorStore"]
             vectorDB_answer, score = perform_query(user_message, astra_vector_store)
 
-            prompt_types = {
-                "Questions": "You are an AI assistant that helps people by generating questions based on the prompt from the content provided.",
-                "MCQS": "You are an AI assistant that helps people by generating MCQs based on the prompt from the content provided. Also give options and correct answer.",
-                "True/False": "You are an AI assistant that helps people by generating True/False questions based on the prompt along with the correct answer from the content provided.",
-                "Hints": "You are an AI assistant that helps people by generating clue-based questions based on the prompt from the content provided."
-            }
-
-            prompt_type = prompt_types.get(prompt_template, "")
-
             prompt = f"""
-                {prompt_type}\n\n
-                Context:\n{vectorDB_answer}\n
-                Question:\n{user_message}\n
+                You are an AI assistant that helps people generate relevant content based on the context provided.
+                
+                Context:
+                {vectorDB_answer}
+                
+                User's query:
+                {user_message}
+                
+                Please generate a response based on the above context and query.
             """
 
             message_history.append({"role": "user", "content": prompt})
@@ -270,7 +257,7 @@ def chatbot():
             try:
                 container.create_item(body={
                     "id": str(uuid.uuid4()),  # Unique identifier for the document
-                    "user_id": session['user_id'],  # Assuming user_id is stored in session
+                    "user_id": session['user_id'],
                     "user_message": user_message,
                     "response": response.choices[0].message.content,
                     "timestamp": datetime.datetime.utcnow().isoformat()
@@ -283,21 +270,15 @@ def chatbot():
             return jsonify({"response": "Please upload a file to start the conversation!"})
     return jsonify({"response": "Please provide a message!"})
 
-@app.route('/deleteCollection', methods=['POST'])
-def deleteCollection():
-    if session.get('table_name'):
-        db = AstraDB(
-            token=os.getenv('ASTRA_DB_APPLICATION_TOKEN'),
-            api_endpoint=os.getenv('ASTRA_DB_API_ENDPOINT'),
-        )
-        table_name = session.get('table_name')
-        db.delete_collection(collection_name=table_name)
-        session['table_name'] = None
+@app.route('/delete', methods=['POST'])
+def delete():
+    table_name = session.get('table_name')
+    if table_name:
+        delete_collection(table_name)
+        session.pop('table_name', None)
         session.pop('uploaded_files', None)
-        session.pop('texts', None)
-        session.pop('prompt_template', None)
-        return "Collection deleted successfully!"
-    return "No collection to delete."
+        return jsonify({"response": "All uploaded files and vectors have been deleted!"})
+    return jsonify({"response": "No files to delete!"})
 
 if __name__ == '__main__':
     app.run(debug=True)
